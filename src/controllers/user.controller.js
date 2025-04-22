@@ -24,17 +24,24 @@ const registerUser = asyncHandler(async (req, res) => {
     }
     //..........................................................................
 
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ username }, { email }]
     })
 
     if (existedUser) {
         throw new apiError(409, "User with email or username is already exists")
     }
+    // console.log(req.files);
+
     //............................................................................
 
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverimage[0]?.path
+    // const coverImageLocalPath = req.files?.coverimage[0]?.path
+
+    let coverImagelocalPath;
+    if (req.files && Array.isArray(req.files.coverimage) && req.files.coverimage.length > 0) {
+        coverImagelocalPath = req.files.coverimage[0].path
+    }
 
     if (!avatarLocalPath) {
         throw new apiError(400, "Avatar file is requied")
@@ -42,7 +49,7 @@ const registerUser = asyncHandler(async (req, res) => {
     //............................................................................
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+    const coverimage = await uploadOnCloudinary(coverImageLocalPath)
 
     if (!avatar) {
         throw new apiError(400, "Avatar file is requied")
@@ -52,7 +59,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const user = await User.create({
         fullname,
         avatar: avatar.url,
-        coverImage: coverImage?.url || "",
+        coverimage: coverimage?.url || "",
         email,
         password,
         username: username.toLowerCase()
